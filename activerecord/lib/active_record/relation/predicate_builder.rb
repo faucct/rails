@@ -4,10 +4,13 @@ module ActiveRecord
     require 'active_record/relation/predicate_builder/association_query_handler'
     require 'active_record/relation/predicate_builder/base_handler'
     require 'active_record/relation/predicate_builder/basic_object_handler'
+    require 'active_record/relation/predicate_builder/belongs_to_association_query_handler'
     require 'active_record/relation/predicate_builder/class_handler'
+    require 'active_record/relation/predicate_builder/foreign_association_query_handler'
     require 'active_record/relation/predicate_builder/polymorphic_array_handler'
     require 'active_record/relation/predicate_builder/range_handler'
     require 'active_record/relation/predicate_builder/relation_handler'
+    require 'active_record/relation/predicate_builder/through_association_query_handler'
 
     delegate :resolve_column_aliases, to: :table
 
@@ -22,8 +25,10 @@ module ActiveRecord
       register_handler(RangeHandler::RangeWithBinds, RangeHandler.new(self))
       register_handler(Relation, RelationHandler.new)
       register_handler(Array, ArrayHandler.new(self))
-      register_handler(AssociationQueryValue, AssociationQueryHandler.new(self))
+      register_handler(BelongsToAssociationQueryValue, BelongsToAssociationQueryHandler.new(self))
+      register_handler(ForeignAssociationQueryValue, ForeignAssociationQueryHandler.new(self))
       register_handler(PolymorphicArrayValue, PolymorphicArrayHandler.new(self))
+      register_handler(ThroughAssociationQueryValue, ThroughAssociationQueryHandler.new(self))
     end
 
     def build_from_hash(attributes)
