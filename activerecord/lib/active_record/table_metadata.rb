@@ -8,6 +8,7 @@ module ActiveRecord
       @arel_table = arel_table
       @association = association
     end
+    attr_reader :klass
 
     def resolve_column_aliases(hash)
       # This method is a hot spot, so for now, use Hash[] to dup the hash.
@@ -58,11 +59,36 @@ module ActiveRecord
     end
 
     def polymorphic_association?
-      association && association.polymorphic?
+      belongs_to_association? && association.polymorphic?
+    end
+
+    def belongs_to_association?
+      association && association.belongs_to?
+    end
+
+    def through_association?
+      association && association.through_reflection
+    end
+
+    def through_table
+      through_reflection = association.through_reflection
+      TableMetadata.new(through_reflection.klass, through_reflection.klass.arel_table, through_reflection)
+    end
+
+    def source_name
+      association && association.source_reflection.name
+    end
+
+    def relation
+      association_class.all
     end
 
     protected
 
-    attr_reader :klass, :arel_table, :association
+    attr_reader :arel_table, :association
+
+    def association_class
+      association ? association.klass : klass
+    end
   end
 end

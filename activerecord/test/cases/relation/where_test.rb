@@ -318,5 +318,87 @@ module ActiveRecord
     def test_where_with_unsupported_arguments
       assert_raises(ArgumentError) { Author.where(42) }
     end
+
+    def test_has_many_shallow_where
+      post = Post.new
+      post.author_id = 1
+
+      expected = Author.where(id: 1).to_sql
+      actual   = Author.where(posts: post).to_sql
+
+      assert_equal expected, actual
+    end
+
+    def test_has_many_nil_where
+      expected = Author.where.not(id: Post.select(:author_id)).to_sql
+      actual   = Author.where(posts: nil).to_sql
+
+      assert_equal expected, actual
+    end
+
+    def test_has_many_not_nil_where
+      expected = Author.where.not(posts: nil)
+      actual   = Author.where(id: Post.select(:author_id))
+
+      assert_equal expected.to_sql, actual.to_sql
+    end
+
+    def test_has_many_array_value_where
+      expected = Author.where(id: Post.where(id: [1, 2]).select(:author_id)).to_sql
+      actual   = Author.where(posts: [1, 2]).to_sql
+
+      assert_equal expected, actual
+    end
+
+    def test_has_many_nested_relation_where
+      expected = Author.where(id: Post.where(id: [1, 2]).select(:author_id)).to_sql
+      actual   = Author.where(posts: Post.where(id: [1,2])).to_sql
+
+      assert_equal expected, actual
+    end
+
+    def test_has_many_nested_where
+      child = Comment.new
+      child.parent_id = 1
+
+      expected = Post.where(comments: { id: 1 }).joins(:comments)
+      actual   = Post.where(comments: { children: child }).joins(:comments)
+
+      assert_equal expected.to_sql, actual.to_sql
+    end
+
+    def test_has_many_through_shallow_where
+      child = Comment.new
+      child.post_id = 1
+
+      expected = Author.where(comments: child)
+      actual   = Author.where(posts: Post.where(id: 1))
+
+      assert_equal expected.to_sql, actual.to_sql
+    end
+
+    def test_has_many_through_nil_where
+      expected = Author.where(comments: nil)
+      actual   = Author.where.not(posts: Post.where(comments: Comment.all))
+
+      assert_equal expected.to_sql, actual.to_sql
+    end
+
+    def test_has_many_through_array_value_where
+      child = Comment.new
+      child.post_id = 1
+
+      expected = Author.where(comments: [child, nil])
+      actual   = Author.where(posts: Post.where(id: 1)).or Author.where.not(posts: Post.where(comments: Comment.all))
+
+      assert_equal expected.to_sql, actual.to_sql
+    end
+
+    def test_has_many_through_relation_where
+      expected = Author.where(comments: Comment.where(id: 1))
+      actual   = Author.where(posts: Post.where(comments: Comment.where(id: 1)))
+
+      assert_equal expected.to_sql, actual.to_sql
+    end
   end
 end

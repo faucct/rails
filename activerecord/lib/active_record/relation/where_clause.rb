@@ -118,17 +118,10 @@ module ActiveRecord
       end
 
       def invert_predicate(node)
-        case node
-        when NilClass
-          raise ArgumentError, 'Invalid argument for .where.not(), got nil.'
-        when Arel::Nodes::In
-          Arel::Nodes::NotIn.new(node.left, node.right)
-        when Arel::Nodes::Equality
-          Arel::Nodes::NotEqual.new(node.left, node.right)
-        when String
-          Arel::Nodes::Not.new(Arel::Nodes::SqlLiteral.new(node))
+        if nil == node
+          raise(ArgumentError, 'Invalid argument for .where.not(), got nil.')
         else
-          Arel::Nodes::Not.new(node)
+          WhereClause.invert_predicate(node)
         end
       end
 
@@ -167,6 +160,25 @@ module ActiveRecord
           node = Arel.sql(node)
         end
         Arel::Nodes::Grouping.new(node)
+      end
+
+      class << self
+        def invert_predicate(node)
+          case node
+          when Arel::Nodes::In
+            Arel::Nodes::NotIn.new(node.left, node.right)
+          when Arel::Nodes::NotIn
+            Arel::Nodes::In.new(node.left, node.right)
+          when Arel::Nodes::Equality
+            Arel::Nodes::NotEqual.new(node.left, node.right)
+          when Arel::Nodes::NotEqual
+            Arel::Nodes::Equality.new(node.left, node.right)
+          when String
+            Arel::Nodes::Not.new(Arel::Nodes::SqlLiteral.new(node))
+          else
+            Arel::Nodes::Not.new(node)
+          end
+        end
       end
     end
   end
