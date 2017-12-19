@@ -101,7 +101,7 @@ module ActiveRecord
 
         def transaction_if(value)
           if value
-            reflection.klass.transaction { yield }
+            transaction { yield }
           else
             yield
           end

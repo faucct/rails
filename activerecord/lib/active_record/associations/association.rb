@@ -70,6 +70,21 @@ module ActiveRecord
         !inversed && loaded? && @stale_state != stale_state
       end
 
+      # Starts a transaction in the association class's database connection.
+      #
+      #   class Author < ActiveRecord::Base
+      #     has_many :books
+      #   end
+      #
+      #   Author.first.books.transaction do
+      #     # same effect as calling Book.transaction
+      #   end
+      def transaction(*args)
+        reflection.active_record.transaction(*args) do
+          yield
+        end
+      end
+
       # Sets the target of this association to <tt>\target</tt>, and the \loaded flag to +true+.
       def target=(target)
         @target = target

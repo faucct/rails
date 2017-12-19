@@ -122,21 +122,6 @@ module ActiveRecord
         end
       end
 
-      # Starts a transaction in the association class's database connection.
-      #
-      #   class Author < ActiveRecord::Base
-      #     has_many :books
-      #   end
-      #
-      #   Author.first.books.transaction do
-      #     # same effect as calling Book.transaction
-      #   end
-      def transaction(*args)
-        reflection.klass.transaction(*args) do
-          yield
-        end
-      end
-
       # Removes all records from the association without calling callbacks
       # on the associated records. It honors the +:dependent+ option. However
       # if the +:dependent+ value is +:destroy+ then in that case the +:delete_all+
