@@ -346,7 +346,17 @@ module ActiveRecord
     #
     #   Person.where(age: 0..18).destroy_all
     def destroy_all
-      records.each(&:destroy).tap { reset }
+      if klass.primary_key
+        records.each(&:destroy).tap { reset }
+      else
+        each(&:_run_destroy_callbacks).tap do
+          stmt = Arel::DeleteManager.new
+          stmt.from klass.arel_table
+          stmt.wheres = arel.constraints
+
+          klass.connection.delete(stmt, "SQL")
+        end
+      end
     end
 
     # Deletes the records without instantiating the records
