@@ -678,7 +678,11 @@ module ActiveRecord
 
       def association_class
         if options[:through]
-          Associations::HasManyThroughAssociation
+          if source_reflection.polymorphic?
+            Associations::HasManyPolymorphicThroughAssociation
+          else
+            Associations::HasManyThroughAssociation
+          end
         else
           Associations::HasManyAssociation
         end
@@ -759,6 +763,10 @@ module ActiveRecord
 
       def through_reflection?
         true
+      end
+
+      def polymorphic?
+        source_reflection.polymorphic? && options[:source_type].nil?
       end
 
       def klass
@@ -928,9 +936,9 @@ module ActiveRecord
           raise HasManyThroughAssociationPointlessSourceTypeError.new(active_record.name, self, source_reflection)
         end
 
-        if source_reflection.polymorphic? && options[:source_type].nil?
-          raise HasManyThroughAssociationPolymorphicSourceError.new(active_record.name, self, source_reflection)
-        end
+        # if source_reflection.polymorphic? && options[:source_type].nil?
+        #   raise HasManyThroughAssociationPolymorphicSourceError.new(active_record.name, self, source_reflection)
+        # end
 
         if has_one? && through_reflection.collection?
           raise HasOneThroughCantAssociateThroughCollection.new(active_record.name, self, through_reflection)

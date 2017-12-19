@@ -25,14 +25,14 @@ module ActiveRecord
     #
     # If you need to work on all current children, new and existing records,
     # +load_target+ and the +loaded+ flag are your friends.
-    class CollectionAssociation < Association #:nodoc:
+    class PolymorphicCollectionAssociation < Association #:nodoc:
       # Implements the reader method, e.g. foo.items for Foo.has_many :items
       def reader
         if stale_target?
           reload
         end
 
-        @proxy ||= reflection.polymorphic? ? PolymorphicCollection.new(self) : CollectionProxy.create(klass, self)
+        @proxy ||= CollectionProxy.create(klass, self)
         @proxy.reset_scope
       end
 
@@ -41,72 +41,10 @@ module ActiveRecord
         replace(records)
       end
 
-      # Implements the ids reader method, e.g. foo.item_ids for Foo.has_many :items
-      def ids_reader
-        if loaded?
-          target.pluck(reflection.association_primary_key)
-        else
-          @association_ids ||= scope.pluck(reflection.association_primary_key)
-        end
-      end
-
-      # Implements the ids writer method, e.g. foo.item_ids= for Foo.has_many :items
-      def ids_writer(ids)
-        pk_type = reflection.association_primary_key_type
-        ids = Array(ids).reject(&:blank?)
-        ids.map! { |i| pk_type.cast(i) }
-
-        primary_key = reflection.association_primary_key
-        records = klass.where(primary_key => ids).index_by do |r|
-          r.public_send(primary_key)
-        end.values_at(*ids).compact
-
-        if records.size != ids.size
-          found_ids = records.map { |record| record.public_send(primary_key) }
-          not_found_ids = ids - found_ids
-          klass.all.raise_record_not_found_exception!(ids, records.size, ids.size, primary_key, not_found_ids)
-        else
-          replace(records)
-        end
-      end
-
       def reset
         super
         @target = []
         @association_ids = nil
-      end
-
-      def find(*args)
-        if options[:inverse_of] && loaded?
-          args_flatten = args.flatten
-          model = scope.klass
-
-          if args_flatten.blank?
-            error_message = "Couldn't find #{model.name} without an ID"
-            raise RecordNotFound.new(error_message, model.name, model.primary_key, args)
-          end
-
-          result = find_by_scan(*args)
-
-          result_size = Array(result).size
-          if !result || result_size != args_flatten.size
-            scope.raise_record_not_found_exception!(args_flatten, result_size, args_flatten.size)
-          else
-            result
-          end
-        else
-          scope.find(*args)
-        end
-      end
-
-      def build(attributes = {}, &block)
-        if attributes.is_a?(Array)
-          attributes.collect { |attr| build(attr, &block) }
-        else
-          add_to_target(build_record(attributes)) do |record|
-            yield(record) if block_given?
-          end
-        end
       end
 
       # Add +records+ to this association. Returns +self+ so method calls may

@@ -194,6 +194,7 @@ module ActiveRecord
     autoload :CollectionAssociation
     autoload :ForeignAssociation
     autoload :CollectionProxy
+    autoload :PolymorphicCollection
     autoload :ThroughAssociation
 
     module Builder #:nodoc:
@@ -211,6 +212,7 @@ module ActiveRecord
       autoload :BelongsToAssociation
       autoload :BelongsToPolymorphicAssociation
       autoload :HasManyAssociation
+      autoload :HasManyPolymorphicThroughAssociation
       autoload :HasManyThroughAssociation
       autoload :HasOneAssociation
       autoload :HasOneThroughAssociation
